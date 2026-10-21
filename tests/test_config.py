@@ -39,3 +39,8 @@ def test_missing_file_gives_helpful_message(tmp_path):
 def test_example_config_is_valid():
     cfg = load_config("devices.example.yaml")
     assert len(cfg.devices) >= 1 and len(cfg.dns_checks) >= 1
+
+
+def test_rejects_too_short_interval():
+    with pytest.raises(ConfigError, match="at least 10"):
+        parse_config({"settings": {"interval_seconds": 2}, "devices": [{"name": "a", "host": "x"}]})

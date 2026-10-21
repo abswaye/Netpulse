@@ -4,6 +4,9 @@
 # own devices. devices.yaml is git-ignored, so your real IPs stay private.
 
 settings:
+  interval_seconds: 300     # how often --watch runs the checks
+  history_db: netpulse.db   # SQLite uptime history
+  log_file: netpulse.log
   ping_timeout_ms: 1000
   port_timeout_ms: 1000
   dns_timeout_ms: 2000

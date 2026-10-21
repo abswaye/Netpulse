@@ -34,6 +34,9 @@ class Settings:
     ping_timeout_ms: int = 1000
     port_timeout_ms: int = 1000
     dns_timeout_ms: int = 2000
+    interval_seconds: int = 300
+    history_db: str = "netpulse.db"
+    log_file: str = "netpulse.log"
 
 
 @dataclass
@@ -77,7 +80,12 @@ def parse_config(data: dict) -> Config:
         ping_timeout_ms=int(raw_settings.get("ping_timeout_ms", 1000)),
         port_timeout_ms=int(raw_settings.get("port_timeout_ms", 1000)),
         dns_timeout_ms=int(raw_settings.get("dns_timeout_ms", 2000)),
+        interval_seconds=int(raw_settings.get("interval_seconds", 300)),
+        history_db=str(raw_settings.get("history_db", "netpulse.db")),
+        log_file=str(raw_settings.get("log_file", "netpulse.log")),
     )
+    if settings.interval_seconds < 10:
+        raise ConfigError("settings: 'interval_seconds' must be at least 10")
 
     devices = []
     seen = set()
