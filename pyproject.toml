@@ -1,0 +1,12 @@
+[project]
+name = "netpulse"
+version = "0.1.0"
+description = "A lightweight network monitor: ping, port and DNS health checks for home labs and small networks."
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Abdulkadir Haji" }]
+dependencies = ["PyYAML>=6.0", "dnspython>=2.6", "rich>=13.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
