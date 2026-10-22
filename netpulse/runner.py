@@ -5,6 +5,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from .checks import CheckResult
+from .checks.arp import check_arp
 from .checks.dns import check_dns
 from .checks.ping import ping
 from .checks.ports import check_port
@@ -17,7 +18,8 @@ def run_checks(config: Config, max_workers: int = 16) -> list[CheckResult]:
     jobs = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         for d in config.devices:
-            jobs.append(pool.submit(ping, d.name, d.host, s.ping_timeout_ms))
+            reach = check_arp if d.method == "arp" else ping
+            jobs.append(pool.submit(reach, d.name, d.host, s.ping_timeout_ms))
             for port in d.ports:
                 jobs.append(pool.submit(check_port, d.name, d.host, port, s.port_timeout_ms))
         for c in config.dns_checks:

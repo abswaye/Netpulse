@@ -23,10 +23,11 @@ alerts sent via: discord
 ## Features
 
 - **Availability checks**: pings every device using the system `ping` command, so it works on Windows, macOS and Linux without admin rights, and reports round-trip latency.
+- **ARP fallback for devices that block ping**: smart TVs, streaming sticks and IoT gear often drop ICMP. With `method: arp`, NetPulse checks whether the device answered ARP (Layer 2) instead, so a TV that ignores ping isn't reported as down.
 - **Port checks**: confirms services (SSH, HTTPS, RDP, WireGuard and so on) are actually listening, not just that the host is up.
 - **DNS health checks**: queries a *specific* DNS server for a record, catching timeouts, SERVFAIL and NXDOMAIN.
 - **DNS drift detection**: compares answers against the values you expect and reports exactly what's missing or unexpected.
-- **Change-based alerts**: Discord webhook and/or email, sent only when a check *changes* state (up to down, down to up). No alert spam every cycle, and recovery alerts say how long the outage lasted.
+- **Change-based alerts**: Discord webhook and/or email, sent only when a check *changes* state (up to down, down to up). No alert spam every cycle, and recovery alerts say how long the outage lasted. Devices that are *supposed* to turn off (TVs, consoles) can be tracked with `alert: false`.
 - **Uptime history**: every result is stored in SQLite; `--report` shows uptime percentage and average latency per check.
 - **Continuous monitoring**: `--watch` re-runs every check on an interval, with everything logged to `netpulse.log`.
 - **Fast and script-friendly**: checks run in parallel; `--json` output and exit codes (`0` all passed, `1` something failed, `2` config error) work well with cron or Task Scheduler.
@@ -94,6 +95,12 @@ devices:
     type: pfSense
     ports: [443]
 
+  - name: living-room-tv
+    host: 192.168.1.40
+    type: Fire TV
+    method: arp                # blocks ping, so check ARP instead (same subnet only)
+    alert: false               # track uptime, but it's normal for a TV to be off
+
 dns_checks:
   - name: lab-record
     server: 192.168.1.1        # the DNS server to ask
@@ -121,6 +128,7 @@ netpulse/
 ├── alerts.py        # Discord webhook + email alerts
 └── checks/
     ├── ping.py      # ICMP availability + latency
+    ├── arp.py       # Layer 2 fallback for devices that block ping
     ├── ports.py     # TCP port checks
     └── dns.py       # DNS resolution + drift detection
 tests/               # pytest suite (no internet access needed)
@@ -140,6 +148,7 @@ python -m pytest
 - [x] Discord webhook and email alerts
 - [x] SQLite uptime history, `--report`, and log file
 - [x] Continuous monitoring (`--watch`)
+- [x] ARP fallback for devices that block ping, per-device alert muting
 - [ ] Automatic DNS remediation with config backup
 - [ ] Web dashboard (Flask)
 - [ ] Docker image and AWS EC2 deployment

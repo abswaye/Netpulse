@@ -66,11 +66,14 @@ def render_table(results: list[CheckResult], types: dict[str, str], console: Con
         console.print(f"[green]All {len(results)} checks passed[/green]")
 
 
-def render_changes(changes: list[Change], sent: list[str], console: Console, alerts_on: bool) -> None:
+def render_changes(
+    changes: list[Change], sent: list[str], console: Console, alerts_on: bool, muted: set[str] | None = None
+) -> None:
     for c in changes:
         title, body = describe(c)
         colour = "green" if c.result.ok else "red"
-        console.print(f"[bold {colour}]{title}[/bold {colour}]  {body}")
+        note = "  [dim](alerts off for this device)[/dim]" if muted and c.result.target in muted else ""
+        console.print(f"[bold {colour}]{title}[/bold {colour}]  {body}{note}")
     if changes and alerts_on:
         console.print(f"[dim]alerts sent via: {', '.join(sent) if sent else 'none (no channel configured)'}[/dim]")
 
@@ -105,9 +108,11 @@ def run_once(config: Config, history: History, console: Console, args) -> list[C
     for c in changes:
         log.warning("%s - %s", *describe(c))
 
+    muted = {d.name for d in config.devices if not d.alert}
+    to_alert = [c for c in changes if c.result.target not in muted]
     sent = []
-    if changes and not args.no_alerts:
-        sent = send_alerts(changes)
+    if to_alert and not args.no_alerts:
+        sent = send_alerts(to_alert)
 
     if args.json:
         payload = {
@@ -118,7 +123,7 @@ def run_once(config: Config, history: History, console: Console, args) -> list[C
         print(json.dumps(payload, indent=2))
     else:
         render_table(results, {d.name: d.type for d in config.devices}, console)
-        render_changes(changes, sent, console, alerts_on=not args.no_alerts)
+        render_changes(changes, sent, console, alerts_on=bool(to_alert) and not args.no_alerts, muted=muted)
     return results
 
 

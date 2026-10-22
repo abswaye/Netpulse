@@ -1,6 +1,6 @@
 [project]
 name = "netpulse"
-version = "0.2.0"
+version = "0.3.0"
 description = "A lightweight network monitor: ping, port and DNS health checks with change-based alerts and uptime history."
 requires-python = ">=3.10"
 license = { text = "MIT" }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -18,6 +19,8 @@ class Device:
     host: str
     type: str = "device"
     ports: list[int] = field(default_factory=list)
+    method: str = "ping"   # "ping", or "arp" for devices that block ping
+    alert: bool = True     # False = track uptime but never send alerts
 
 
 @dataclass
@@ -97,12 +100,26 @@ def parse_config(data: dict) -> Config:
         if name in seen:
             raise ConfigError(f"{where}: duplicate device name '{name}'")
         seen.add(name)
+        host = _require(entry, "host", where)
+        method = str(entry.get("method", "ping")).lower()
+        if method not in ("ping", "arp"):
+            raise ConfigError(f"{where}: 'method' must be 'ping' or 'arp'")
+        if method == "arp":
+            try:
+                ipaddress.IPv4Address(host)
+            except ValueError:
+                raise ConfigError(f"{where}: method 'arp' needs an IPv4 address on your local network") from None
+        alert = entry.get("alert", True)
+        if not isinstance(alert, bool):
+            raise ConfigError(f"{where}: 'alert' must be true or false")
         devices.append(
             Device(
                 name=name,
-                host=_require(entry, "host", where),
+                host=host,
                 type=str(entry.get("type", "device")),
                 ports=_parse_ports(entry.get("ports"), where),
+                method=method,
+                alert=alert,
             )
         )
 
